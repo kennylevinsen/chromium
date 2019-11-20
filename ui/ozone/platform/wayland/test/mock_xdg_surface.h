@@ -8,7 +8,7 @@
 #include <memory>
 #include <utility>
 
-#include <xdg-shell-unstable-v5-server-protocol.h>
+#include <xdg-shell-sserver-protocol.h>
 #include <xdg-shell-unstable-v6-server-protocol.h>
 
 #include "testing/gmock/include/gmock/gmock.h"

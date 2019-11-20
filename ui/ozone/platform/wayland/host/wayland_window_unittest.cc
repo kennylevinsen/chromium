@@ -9,7 +9,7 @@
 
 #include <linux/input.h>
 #include <wayland-server-core.h>
-#include <xdg-shell-unstable-v5-server-protocol.h>
+#include <xdg-shell-server-protocol.h>
 #include <xdg-shell-unstable-v6-server-protocol.h>
 
 #include "base/run_loop.h"
@@ -104,31 +104,38 @@ class WaylandWindowTest : public WaylandTest {
       return;
     }
 
-    // In xdg_shell_v6, both surfaces send serial configure event and toplevel
+    // In xdg_shell_v6+, both surfaces send serial configure event and toplevel
     // surfaces send other data like states, heights and widths.
-    zxdg_surface_v6_send_configure(xdg_surface_->resource(), serial);
-    ASSERT_TRUE(xdg_surface_->xdg_toplevel());
-    zxdg_toplevel_v6_send_configure(xdg_surface_->xdg_toplevel()->resource(),
+    if (GetParam() == kXdgShellV6) {
+        zxdg_surface_v6_send_configure(xdg_surface_->resource(), serial);
+        ASSERT_TRUE(xdg_surface_->xdg_toplevel());
+        zxdg_toplevel_v6_send_configure(xdg_surface_->xdg_toplevel()->resource(),
+                                        width, height, states);
+     } else {
+        xdg_surface_send_configure(xdg_surface_->resource(), serial);
+        ASSERT_TRUE(xdg_surface_->xdg_toplevel());
+        xdg_toplevel_send_configure(xdg_surface_->xdg_toplevel()->resource(),
                                     width, height, states);
+     }
   }
 
   void SendConfigureEventPopup(gfx::AcceleratedWidget menu_widget,
                                const gfx::Rect bounds) {
     auto* popup = GetPopupByWidget(menu_widget);
     ASSERT_TRUE(popup);
-    if (GetParam() == kXdgShellV5) {
-      LOG(WARNING) << "XDG V5 does not support configure events for popups.";
-    } else {
+    if (GetParam() == kXdgShellV6) {
       zxdg_popup_v6_send_configure(popup->resource(), bounds.x(), bounds.y(),
                                    bounds.width(), bounds.height());
+    } else {
+      xdg_popup_send_configure(popup->resource(), bounds.x(), bounds.y(),
+                               bounds.width(), bounds.height());
     }
+
   }
 
   // Depending on a shell version, xdg_surface_ or xdg_toplevel surface should
   // get the mock calls. This method decided, which surface to use.
   wl::MockXdgSurface* GetXdgSurface() {
-    if (GetParam() == kXdgShellV5)
-      return xdg_surface_;
     return xdg_surface_->xdg_toplevel();
   }
 
@@ -186,11 +193,6 @@ class WaylandWindowTest : public WaylandTest {
     auto* popup = GetPopupByWidget(menu_widget);
     ASSERT_TRUE(popup);
 
-    if (GetParam() == kXdgShellV5) {
-      LOG(WARNING) << "XDG V5 does not support xdg_positioner";
-      return;
-    }
-
     EXPECT_EQ(popup->anchor_rect(), position.anchor_rect);
     EXPECT_EQ(popup->size(), position.size);
     EXPECT_EQ(popup->anchor(), position.anchor);
@@ -201,13 +203,9 @@ class WaylandWindowTest : public WaylandTest {
   wl::MockXdgPopup* GetPopupByWidget(gfx::AcceleratedWidget widget) {
     wl::MockSurface* mock_surface = server_.GetObject<wl::MockSurface>(widget);
     if (mock_surface) {
-      if (GetParam() == kXdgShellV5) {
-        return mock_surface->xdg_popup();
-      } else {
-        auto* mock_xdg_surface = mock_surface->xdg_surface();
-        if (mock_xdg_surface)
-          return mock_xdg_surface->xdg_popup();
-      }
+      auto* mock_xdg_surface = mock_surface->xdg_surface();
+      if (mock_xdg_surface)
+        return mock_xdg_surface->xdg_popup();
     }
     return nullptr;
   }
@@ -874,11 +872,6 @@ TEST_P(WaylandWindowTest, DispatchWindowResize) {
 // bounds back from relative to parent to be relative to screen/toplevel window.
 // All bounds values are taken by manually running the browser.
 TEST_P(WaylandWindowTest, AdjustPopupBounds) {
-  // Only shell v6 exercises this test as long as shell v5 does not support
-  // positioners.
-  if (GetParam() == kXdgShellV5)
-    return;
-
   PopupPosition menu_window_positioner = {
       gfx::Rect(439, 46, 1, 30), gfx::Size(287, 409),
       ZXDG_POSITIONER_V6_ANCHOR_BOTTOM | ZXDG_POSITIONER_V6_ANCHOR_RIGHT,
@@ -1162,9 +1155,9 @@ TEST_P(WaylandWindowTest, OnCloseRequest) {
   Sync();
 }
 
-INSTANTIATE_TEST_SUITE_P(XdgVersionV5Test,
+INSTANTIATE_TEST_SUITE_P(XdgVersionTest,
                          WaylandWindowTest,
-                         ::testing::Values(kXdgShellV5));
+                         ::testing::Values(kXdgShellStable));
 INSTANTIATE_TEST_SUITE_P(XdgVersionV6Test,
                          WaylandWindowTest,
                          ::testing::Values(kXdgShellV6));

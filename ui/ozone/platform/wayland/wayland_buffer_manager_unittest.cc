@@ -721,9 +721,9 @@ TEST_P(WaylandBufferManagerTest, AnonymousBufferAttachedAndReleased) {
   Sync();
 }
 
-INSTANTIATE_TEST_SUITE_P(XdgVersionV5Test,
+INSTANTIATE_TEST_SUITE_P(XdgVersionTest,
                          WaylandBufferManagerTest,
-                         ::testing::Values(kXdgShellV5));
+                         ::testing::Values(kXdgShellStable));
 INSTANTIATE_TEST_SUITE_P(XdgVersionV6Test,
                          WaylandBufferManagerTest,
                          ::testing::Values(kXdgShellV6));

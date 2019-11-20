@@ -15,7 +15,7 @@ void SetSize(struct wl_client* wl_client,
              int32_t width,
              int32_t height) {
   if (width < 1 || height < 1) {
-    wl_resource_post_error(resource, ZXDG_POSITIONER_V6_ERROR_INVALID_INPUT,
+    wl_resource_post_error(resource, XDG_POSITIONER_ERROR_INVALID_INPUT,
                            "width and height must be positive and non-zero");
     return;
   }
@@ -30,7 +30,7 @@ void SetAnchorRect(struct wl_client* client,
                    int32_t width,
                    int32_t height) {
   if (width < 1 || height < 1) {
-    wl_resource_post_error(resource, ZXDG_POSITIONER_V6_ERROR_INVALID_INPUT,
+    wl_resource_post_error(resource, XDG_POSITIONER_ERROR_INVALID_INPUT,
                            "width and height must be positive and non-zero");
     return;
   }
@@ -42,11 +42,11 @@ void SetAnchorRect(struct wl_client* client,
 void SetAnchor(struct wl_client* wl_client,
                struct wl_resource* resource,
                uint32_t anchor) {
-  if (((anchor & ZXDG_POSITIONER_V6_ANCHOR_LEFT) &&
-       (anchor & ZXDG_POSITIONER_V6_ANCHOR_RIGHT)) ||
-      ((anchor & ZXDG_POSITIONER_V6_ANCHOR_TOP) &&
-       (anchor & ZXDG_POSITIONER_V6_ANCHOR_BOTTOM))) {
-    wl_resource_post_error(resource, ZXDG_POSITIONER_V6_ERROR_INVALID_INPUT,
+  if (((anchor & XDG_POSITIONER_ANCHOR_LEFT) &&
+       (anchor & XDG_POSITIONER_ANCHOR_RIGHT)) ||
+      ((anchor & XDG_POSITIONER_ANCHOR_TOP) &&
+       (anchor & XDG_POSITIONER_ANCHOR_BOTTOM))) {
+    wl_resource_post_error(resource, XDG_POSITIONER_ERROR_INVALID_INPUT,
                            "same-axis values are not allowed");
     return;
   }
@@ -57,11 +57,11 @@ void SetAnchor(struct wl_client* wl_client,
 void SetGravity(struct wl_client* client,
                 struct wl_resource* resource,
                 uint32_t gravity) {
-  if (((gravity & ZXDG_POSITIONER_V6_GRAVITY_LEFT) &&
-       (gravity & ZXDG_POSITIONER_V6_GRAVITY_RIGHT)) ||
-      ((gravity & ZXDG_POSITIONER_V6_GRAVITY_TOP) &&
-       (gravity & ZXDG_POSITIONER_V6_GRAVITY_BOTTOM))) {
-    wl_resource_post_error(resource, ZXDG_POSITIONER_V6_ERROR_INVALID_INPUT,
+  if (((gravity & XDG_POSITIONER_GRAVITY_LEFT) &&
+       (gravity & XDG_POSITIONER_GRAVITY_RIGHT)) ||
+      ((gravity & XDG_POSITIONER_GRAVITY_TOP) &&
+       (gravity & XDG_POSITIONER_GRAVITY_BOTTOM))) {
+    wl_resource_post_error(resource, XDG_POSITIONER_ERROR_INVALID_INPUT,
                            "same-axis values are not allowed");
     return;
   }
@@ -76,15 +76,92 @@ void SetConstraintAdjustment(struct wl_client* client,
       constraint_adjustment);
 }
 
+
+void SetSizeV6(struct wl_client* wl_client,
+               struct wl_resource* resource,
+               int32_t width,
+               int32_t height) {
+  if (width < 1 || height < 1) {
+    wl_resource_post_error(resource, ZXDG_POSITIONER_V6_ERROR_INVALID_INPUT,
+                           "width and height must be positive and non-zero");
+    return;
+  }
+
+  GetUserDataAs<TestPositioner>(resource)->set_size(gfx::Size(width, height));
+}
+
+void SetAnchorRectV6(struct wl_client* client,
+                     struct wl_resource* resource,
+                     int32_t x,
+                     int32_t y,
+                     int32_t width,
+                     int32_t height) {
+  if (width < 1 || height < 1) {
+    wl_resource_post_error(resource, ZXDG_POSITIONER_V6_ERROR_INVALID_INPUT,
+                           "width and height must be positive and non-zero");
+    return;
+  }
+
+  GetUserDataAs<TestPositioner>(resource)->set_anchor_rect(
+      gfx::Rect(x, y, width, height));
+}
+
+void SetAnchorV6(struct wl_client* wl_client,
+                 struct wl_resource* resource,
+                 uint32_t anchor) {
+  if (((anchor & ZXDG_POSITIONER_V6_ANCHOR_LEFT) &&
+       (anchor & ZXDG_POSITIONER_V6_ANCHOR_RIGHT)) ||
+      ((anchor & ZXDG_POSITIONER_V6_ANCHOR_TOP) &&
+       (anchor & ZXDG_POSITIONER_V6_ANCHOR_BOTTOM))) {
+    wl_resource_post_error(resource, ZXDG_POSITIONER_V6_ERROR_INVALID_INPUT,
+                           "same-axis values are not allowed");
+    return;
+  }
+
+  GetUserDataAs<TestPositioner>(resource)->set_anchor(anchor);
+}
+
+void SetGravityV6(struct wl_client* client,
+                  struct wl_resource* resource,
+                  uint32_t gravity) {
+  if (((gravity & ZXDG_POSITIONER_V6_GRAVITY_LEFT) &&
+       (gravity & ZXDG_POSITIONER_V6_GRAVITY_RIGHT)) ||
+      ((gravity & ZXDG_POSITIONER_V6_GRAVITY_TOP) &&
+       (gravity & ZXDG_POSITIONER_V6_GRAVITY_BOTTOM))) {
+    wl_resource_post_error(resource, ZXDG_POSITIONER_V6_ERROR_INVALID_INPUT,
+                           "same-axis values are not allowed");
+    return;
+  }
+
+  GetUserDataAs<TestPositioner>(resource)->set_gravity(gravity);
+}
+
+void SetConstraintAdjustmentV6(struct wl_client* client,
+                               struct wl_resource* resource,
+                               uint32_t constraint_adjustment) {
+  GetUserDataAs<TestPositioner>(resource)->set_constraint_adjustment(
+      constraint_adjustment);
+}
+
 }  // namespace
 
-const struct zxdg_positioner_v6_interface kTestZxdgPositionerV6Impl = {
+const struct xdg_positioner_interface kTestXdgPositionerImpl = {
     &DestroyResource,          // destroy
     &SetSize,                  // set_size
     &SetAnchorRect,            // set_anchor_rect
     &SetAnchor,                // set_anchor
     &SetGravity,               // set_gravity
     &SetConstraintAdjustment,  // set_constraint_adjustment
+    nullptr,                   // set_offset
+};
+
+const struct zxdg_positioner_v6_interface kTestZxdgPositionerV6Impl = {
+    &DestroyResource,           // destroy
+    &SetSizeV6,                 // set_size
+    &SetAnchorRectV6,           // set_anchor_rect
+    &SetAnchorV6,               // set_anchor
+    &SetGravityV6,              // set_gravity
+    &SetConstraintAdjustmentV6, // set_constraint_adjustment
     nullptr,                   // set_offset
 };
 

@@ -36,7 +36,7 @@ class XDGPopupWrapper;
 class XDGSurfaceWrapper;
 
 namespace {
-class XDGShellObjectFactory;
+class XDGWMBaseObjectFactory;
 }  // namespace
 
 class WaylandWindow : public PlatformWindowLinux,
@@ -149,7 +149,7 @@ class WaylandWindow : public PlatformWindowLinux,
   uint32_t DispatchEvent(const PlatformEvent& event) override;
 
   // Handles the configuration events coming from the surface (see
-  // |XDGSurfaceWrapperV5::Configure| and
+  // |XDGSurfaceWrapper::Configure| and
   // |XDGSurfaceWrapperV6::ConfigureTopLevel|.  The width and height come in
   // DIP of the output that the surface is currently bound to.
   void HandleSurfaceConfigure(int32_t widht,
@@ -227,7 +227,7 @@ class WaylandWindow : public PlatformWindowLinux,
   WaylandWindow* child_window_ = nullptr;
 
   // Creates xdg objects based on xdg shell version.
-  std::unique_ptr<XDGShellObjectFactory> xdg_shell_objects_factory_;
+  std::unique_ptr<XDGWMBaseObjectFactory> xdg_wm_base_objects_factory_;
 
   wl::Object<wl_surface> surface_;
   wl::Object<wl_subsurface> tooltip_subsurface_;

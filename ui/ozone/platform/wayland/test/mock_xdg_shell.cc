@@ -40,10 +40,12 @@ void GetXdgSurfaceImpl(wl_client* client,
       std::make_unique<MockXdgSurface>(xdg_surface_resource, implementation));
 }
 
-void UseUnstableVersion(wl_client* client,
-                        wl_resource* resource,
-                        int32_t version) {
-  GetUserDataAs<MockXdgShell>(resource)->UseUnstableVersion(version);
+void CreatePositioner(wl_client* client,
+                      struct wl_resource* resource,
+                      uint32_t id) {
+  CreateResourceWithImpl<TestPositioner>(client, &xdg_positioner_interface,
+                                         wl_resource_get_version(resource),
+                                         &kTestXdgPositionerImpl, id);
 }
 
 void GetXdgSurface(wl_client* client,
@@ -54,38 +56,11 @@ void GetXdgSurface(wl_client* client,
                     &xdg_surface_interface, &kMockXdgSurfaceImpl);
 }
 
-void GetXdgPopup(struct wl_client* client,
-                 struct wl_resource* resource,
-                 uint32_t id,
-                 struct wl_resource* surface,
-                 struct wl_resource* parent,
-                 struct wl_resource* seat,
-                 uint32_t serial,
-                 int32_t x,
-                 int32_t y) {
-  auto* mock_surface = GetUserDataAs<MockSurface>(surface);
-  if (mock_surface->resource() &&
-      ResourceHasImplementation(mock_surface->resource(), &xdg_popup_interface,
-                                &kXdgPopupImpl)) {
-    wl_resource_post_error(resource, XDG_SHELL_ERROR_ROLE,
-                           "surface has already assigned a role");
-    return;
-  }
-
-  wl_resource* xdg_popup_resource = wl_resource_create(
-      client, &xdg_popup_interface, wl_resource_get_version(resource), id);
-
-  auto mock_xdg_popup =
-      std::make_unique<MockXdgPopup>(xdg_popup_resource, &kXdgPopupImpl);
-
-  mock_surface->set_xdg_popup(std::move(mock_xdg_popup));
-}
-
 void Pong(wl_client* client, wl_resource* resource, uint32_t serial) {
   GetUserDataAs<MockXdgShell>(resource)->Pong(serial);
 }
 
-void CreatePositioner(wl_client* client,
+void CreatePositionerV6(wl_client* client,
                       struct wl_resource* resource,
                       uint32_t id) {
   CreateResourceWithImpl<TestPositioner>(client, &zxdg_positioner_v6_interface,
@@ -109,17 +84,16 @@ void PongV6(wl_client* client, wl_resource* resource, uint32_t serial) {
 
 const struct xdg_shell_interface kMockXdgShellImpl = {
     &DestroyResource,     // destroy
-    &UseUnstableVersion,  // use_unstable_version
+    &CreatePositioner,    // create_positioner
     &GetXdgSurface,       // get_xdg_surface
-    &GetXdgPopup,         // get_xdg_popup
     &Pong,                // pong
 };
 
 const struct zxdg_shell_v6_interface kMockZxdgShellV6Impl = {
-    &DestroyResource,   // destroy
-    &CreatePositioner,  // create_positioner
-    &GetXdgSurfaceV6,   // get_xdg_surface
-    &PongV6,            // pong
+    &DestroyResource,    // destroy
+    &CreatePositionerV6, // create_positioner
+    &GetXdgSurfaceV6,    // get_xdg_surface
+    &PongV6,             // pong
 };
 
 MockXdgShell::MockXdgShell()
